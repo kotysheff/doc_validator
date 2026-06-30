@@ -1,0 +1,24 @@
+{
+  "required_files": [
+    {
+      "name": "report",
+      "allowed_extensions": [".pdf", ".docx"],
+      "required": true
+    },
+    {
+      "name": "individual_task",
+      "allowed_extensions": [".docx"],
+      "required": true
+    },
+    {
+      "name": "title_page",
+      "allowed_extensions": [".docx", ".pdf"],
+      "required": true
+    }
+  ],
+  "settings": {
+    "recursive": true,
+    "check_empty_files": true,
+    "detect_extra_files": true
+  }
+}
