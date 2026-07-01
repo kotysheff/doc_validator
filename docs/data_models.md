@@ -27,7 +27,6 @@ required = True
 - `name` формируется на основе имени файла до точки
 - расширения берутся после точки
 - если для одного и того же `name` указано несколько расширений, они объединяются в список
-- флаг `required` задается с помощью префикса `!` в начале названия документа
 
 ## ScannedFile
 
@@ -49,16 +48,6 @@ path = Path(...)
 size_bytes = 400
 relative_path = Path(...)
 ```
-
-## ValidationStatus
-
-### Назначение
-Перечисление статусов результата проверки.
-
-### Значения
-- `OK` — проблем не найдено
-- `WARNING` — найдены предупреждения, например лишние или пустые необязательные файлы
-- `ERROR` — найдены критичные ошибки, например отсутствуют обязательные файлы или нарушены правила проверки
 
 ## IssueType
 
@@ -93,7 +82,16 @@ relative_path = Path(...)
 - `txt`
 - `json`
 - `csv`
-- `pdf`
+
+## ValidationStatus
+
+### Назначение
+Итоговый статус проверки в целом.
+
+### Значения
+- `OK` — проблем не обнаружено
+- `WARNING` — есть предупреждения или информационные сообщения
+- `ERROR` — обнаружена хотя бы одна критическая ошибка
 
 ## ValidationIssue
 
@@ -120,23 +118,26 @@ severity = Severity.error
 Представляет итог результата проверки.
 
 ### Поля
-- `status` — статус результата проверки; значение из перечисления `ValidationStatus`
+- `status` — итоговый статус проверки; значение из перечисления `ValidationStatus`, вычисляется автоматически по списку `issues` после завершения проверки.
+  - `OK`, если проблем нет
+  - `WARNING`, если есть предупреждения или информационные сообщения
+  - `ERROR`, если есть хотя бы одна критичная ошибка
 - `found_files` — список объектов `ScannedFile`, представляющих файлы, найденные в каталоге и соответствующие запросу пользователя
 - `missing_files` — список объектов `ExpectedFile`, описывающих файлы, которые должны были быть найдены, но отсутствуют
 - `wrong_extension_files` — список объектов `ScannedFile`, представляющих файлы, для которых имя совпало с ожидаемым, но расширение оказалось неверным
 - `empty_files` — список объектов `ScannedFile`, представляющих найденные файлы с нулевым размером
-- `extra_files` — список объектов `ScannedFile`, представляющих файлы, найденные в каталоге, но не запрошенные пользователем; определяется ключом `--extra`
+- `extra_files` — список объектов `ScannedFile`, представляющих файлы, найденные в каталоге, но не запрошенные пользователем;
 - `issues` — список объектов `ValidationIssue`, описывающих проблемы, возникшие в ходе проверки
 
 ### Пример
 ```python
-status = ValidationStatus.OK
+status = "OK"
 found_files = [ScannedFile(name="primer1", extension=".docx", absolute_path=Path("..."), size_bytes=1200, relative_path=Path("primer1.docx"))]
 missing_files = [ExpectedFile(name="missing", allowed_extensions=[".txt"], required=True)]
 wrong_extension_files = [ScannedFile(name="wrong", extension=".py", absolute_path=Path("..."), size_bytes=100, relative_path=Path("wrong.py"))]
 empty_files = [ScannedFile(name="empty_file", extension=".csv", absolute_path=Path("..."), size_bytes=0, relative_path=Path("empty_file.csv"))]
 extra_files = [ScannedFile(name="extra", extension=".txt", absolute_path=Path("..."), size_bytes=150, relative_path=Path("extra.txt"))]
 issues = [
-    ValidationIssue(issue_type=IssueType.missing_file, message="Файл не был найден", file_name="missing.txt", severity=Severity.error)
+    ValidationIssue(issue_type=IssueType.missing_file, message="Файл не был найден", file_name="missing.txt", severity=Severity.ERROR)
 ]
 ```
