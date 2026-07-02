@@ -631,3 +631,64 @@ class TestValidationResult:
 
         assert exc_info.type is TypeError
         assert "Элемент списка 'issues' по индексу 0 должен быть экземпляром ValidationIssue" in str(exc_info.value)
+
+
+@pytest.fixture
+def validation_settings_factory(recursive=False, check_empty_files=False, detect_extra_files=False):
+    def _create_validation_settings(
+            recursive=recursive,
+            check_empty_files=check_empty_files,
+            detect_extra_files=detect_extra_files,
+    ):
+        return ValidationSettings(
+            recursive=recursive,
+            check_empty_files=check_empty_files,
+            detect_extra_files=detect_extra_files,
+        )
+    return _create_validation_settings
+
+
+class TestValidationSettings:
+    """Тестирование модели настроек поиска файлов"""
+
+    def test_create_validation_settings_default(self, validation_settings_factory):
+        settings = validation_settings_factory()
+
+        assert isinstance(settings, ValidationSettings)
+        assert settings.recursive is False
+        assert settings.check_empty_files is False
+        assert settings.detect_extra_files is False
+
+    def test_create_validation_settings_all_true(self, validation_settings_factory):
+        settings = validation_settings_factory(
+            recursive=True,
+            check_empty_files=True,
+            detect_extra_files=True,
+        )
+
+        assert isinstance(settings, ValidationSettings)
+        assert settings.recursive is True
+        assert settings.check_empty_files is True
+        assert settings.detect_extra_files is True
+
+    def test_create_validation_settings_recursive_not_bool(self, validation_settings_factory):
+        with pytest.raises(TypeError) as exc_info:
+            validation_settings_factory(recursive="yes")
+
+        assert exc_info.type is TypeError
+        assert "Поле 'recursive' должно быть типа 'bool'" in str(exc_info.value)
+
+    def test_create_validation_settings_check_empty_files_not_bool(self, validation_settings_factory):
+        with pytest.raises(TypeError) as exc_info:
+            validation_settings_factory(check_empty_files=None)
+
+        assert exc_info.type is TypeError
+        assert "Поле 'check_empty_files' должно быть типа 'bool'" in str(exc_info.value)
+
+    def test_create_validation_settings_detect_extra_files_not_bool(self, validation_settings_factory):
+        with pytest.raises(TypeError) as exc_info:
+            validation_settings_factory(detect_extra_files=0)
+
+        assert exc_info.type is TypeError
+        assert "Поле 'detect_extra_files' должно быть типа 'bool'" in str(exc_info.value)
+    
