@@ -39,9 +39,10 @@ class IssueType(Enum):
             IssueType.EXTRA_FILE: "в каталоге обнаружен файл, который не был указан в требованиях",
             IssueType.INVALID_REQUIREMENTS: "структура или содержимое файла требований некорректны",
             IssueType.DIRECTORY_NOT_FOUND: "целевой каталог не существует",
-            IssueType.REPORT_WRITE_ERROR: "ошибка при запсии отчета"
+            IssueType.REPORT_WRITE_ERROR: "ошибка при записи отчета"
         }
         return issued_description[self]
+
 
 class Severity(Enum):
     """Уровень важности отдельной проблемы."""
@@ -61,6 +62,7 @@ class Severity(Enum):
             Severity.ERROR: "критическая ошибка",
         }
         return descriptions[self]
+
 
 class ReportFormat(Enum):
     """Перечисление поддерживаемых форматов отчетов"""
@@ -82,6 +84,7 @@ class ValidationStatus(Enum):
 
     def __str__(self) -> str:
         return self.value
+
 
 @dataclass
 class ExpectedFile:
@@ -144,8 +147,6 @@ class ExpectedFile:
 
         normalized_extensions: list[str] = []
         for extension in self.allowed_extensions:
-            if not isinstance(extension, str):
-                raise TypeError(f"Элемент списка 'allowed_extensions' должен быть строкой, получено {type(extension).__name__}")
 
             if not extension.startswith('.'):
                 raise DataFillError(
@@ -173,6 +174,7 @@ class ExpectedFile:
         """Проверка инварианта флага обязательности"""
         if not isinstance(self.required, bool):
             raise TypeError(f"Поле 'required' должно быть типа 'bool', получено {type(self.required).__name__}")
+
 
 @dataclass
 class ScannedFile:
@@ -252,12 +254,15 @@ class ScannedFile:
     def _validate_absolute_path(self) -> None:
         """Проверка инварианта абсолютного пути"""
         if not isinstance(self.absolute_path, Path):
-            raise TypeError(f"Поле 'absolute_path' должно быть типа 'Path', получено {type(self.absolute_path).__name__}")
+            raise TypeError(
+                f"Поле 'absolute_path' должно быть типа 'Path', получено {type(self.absolute_path).__name__}")
 
     def _validate_relative_path(self) -> None:
         """Проверка инварианта относительного пути"""
         if not isinstance(self.relative_path, Path):
-            raise TypeError(f"Поле 'relative_path' должно быть типа 'Path', получено {type(self.relative_path).__name__}")
+            raise TypeError(
+                f"Поле 'relative_path' должно быть типа 'Path', получено {type(self.relative_path).__name__}")
+
 
 @dataclass
 class ValidationIssue:
@@ -290,7 +295,8 @@ class ValidationIssue:
     def _validate_file_name(self) -> None:
         """Проверка инварианта имени файла"""
         if self.file_name is not None and not isinstance(self.file_name, str):
-            raise TypeError(f"Поле 'file_name' должно быть типа 'str' или None, получено {type(self.file_name).__name__}")
+            raise TypeError(
+                f"Поле 'file_name' должно быть типа 'str' или None, получено {type(self.file_name).__name__}")
 
     def _validate_severity(self) -> None:
         """Проверка инварианта важности проблемы"""
@@ -298,6 +304,7 @@ class ValidationIssue:
             raise TypeError(
                 f"Поле 'severity' должно быть экземпляром Severity, получено {type(self.severity).__name__}"
             )
+
 
 @dataclass
 class ValidationResult:
