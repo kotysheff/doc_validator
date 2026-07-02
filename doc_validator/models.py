@@ -389,3 +389,34 @@ class ValidationResult:
                     f"Элемент списка '{field_name}' по индексу {index} должен быть экземпляром "
                     f"{expected_type.__name__}, получено {type(value).__name__}"
                 )
+
+@dataclass
+class ValidationSettings:
+    """Модель настроек поиска файлов"""
+
+    recursive: bool = False
+    check_empty_files: bool = False
+    detect_extra_files: bool = False
+
+    def __post_init__(self) -> None:
+        self._validate_recursive()
+        self._validate_empty_files()
+        self._validate_detect_extra_files()
+
+    def _validate_recursive(self) -> None:
+        if not isinstance(self.recursive, bool):
+            raise TypeError(
+                f"Поле 'recursive' должно быть типа 'bool', получено {type(self.recursive).__name__}"
+            )
+
+    def _validate_empty_files(self) -> None:
+        if not isinstance(self.check_empty_files, bool):
+            raise TypeError(
+                f"Поле 'check_empty_files' должно быть типа 'bool', получено {type(self.check_empty_files).__name__}"
+            )
+
+    def _validate_detect_extra_files(self) -> None:
+        if not isinstance(self.detect_extra_files, bool):
+            raise TypeError(
+                f"Поле 'detect_extra_files' должно быть типа 'bool', получено {type(self.detect_extra_files).__name__}"
+            )
