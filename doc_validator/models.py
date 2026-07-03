@@ -420,3 +420,32 @@ class ValidationSettings:
             raise TypeError(
                 f"Поле 'detect_extra_files' должно быть типа 'bool', получено {type(self.detect_extra_files).__name__}"
             )
+
+@dataclass
+class Requirements:
+    required_files: list[ExpectedFile] = field(default_factory=list)
+    settings: ValidationSettings = field(default_factory=ValidationSettings)
+    def __post_init__(self) -> None:
+        self._validate_required_files()
+        self._validate_settings()
+
+    def _validate_required_files(self) -> None:
+        """Проверка инварианта списка ожидаемых файлов"""
+        if not isinstance(self.required_files, list):
+            raise TypeError(
+                f"Поле 'required_files' должно быть типа 'list', получено {type(self.required_files).__name__}"
+            )
+
+        for index, item in enumerate(self.required_files):
+            if not isinstance(item, ExpectedFile):
+                raise TypeError(
+                    f"Элемент списка 'required_files' по индексу {index} должен быть экземпляром ExpectedFile, "
+                    f"получено {type(item).__name__}"
+                )
+
+    def _validate_settings(self) -> None:
+        """Проверка инварианта настроек проверки"""
+        if not isinstance(self.settings, ValidationSettings):
+            raise TypeError(
+                f"Поле 'settings' должно быть экземпляром ValidationSettings, получено {type(self.settings).__name__}"
+            )

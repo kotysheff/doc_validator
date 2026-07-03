@@ -691,4 +691,66 @@ class TestValidationSettings:
 
         assert exc_info.type is TypeError
         assert "Поле 'detect_extra_files' должно быть типа 'bool'" in str(exc_info.value)
+
+
+@pytest.fixture
+def requirements_factory(required_files=None, settings=None):
+    def _create_requirements(required_files=required_files, settings=settings):
+        if required_files is None:
+            required_files = []
+        if settings is None:
+            settings = ValidationSettings()
+        return Requirements(
+            required_files=required_files,
+            settings=settings,
+        )
+    return _create_requirements
+
+
+class TestRequirements:
+    """Тестирование модели описания требований"""
+
+    def test_create_requirements_default(self, requirements_factory):
+        requirements = requirements_factory()
+
+        assert isinstance(requirements, Requirements)
+        assert requirements.required_files == []
+        assert isinstance(requirements.settings, ValidationSettings)
+        assert requirements.settings.recursive is False
+        assert requirements.settings.check_empty_files is False
+        assert requirements.settings.detect_extra_files is False
+
+    def test_create_requirements_with_files_and_settings(self, requirements_factory, expected_file_factory,
+                                                        validation_settings_factory):
+        expected_file = expected_file_factory(name="report", allowed_extensions=[".pdf"], required=True)
+        settings = validation_settings_factory(check_empty_files=True, detect_extra_files=True)
+
+        requirements = requirements_factory(required_files=[expected_file], settings=settings)
+
+        assert isinstance(requirements, Requirements)
+        assert requirements.required_files == [expected_file]
+        assert requirements.settings == settings
+        assert requirements.settings.check_empty_files is True
+        assert requirements.settings.detect_extra_files is True
+
+    def test_create_requirements_required_files_not_list(self, requirements_factory):
+        with pytest.raises(TypeError) as exc_info:
+            requirements_factory(required_files="not-a-list")
+
+        assert exc_info.type is TypeError
+        assert "Поле 'required_files' должно быть типа 'list'" in str(exc_info.value)
+
+    def test_create_requirements_required_file_item_wrong_type(self, requirements_factory):
+        with pytest.raises(TypeError) as exc_info:
+            requirements_factory(required_files=["not-an-expected-file"])
+
+        assert exc_info.type is TypeError
+        assert "Элемент списка 'required_files' по индексу 0 должен быть экземпляром ExpectedFile" in str(exc_info.value)
+
+    def test_create_requirements_settings_not_validation_settings(self, requirements_factory):
+        with pytest.raises(TypeError) as exc_info:
+            requirements_factory(settings="not-settings")
+
+        assert exc_info.type is TypeError
+        assert "Поле 'settings' должно быть экземпляром ValidationSettings" in str(exc_info.value)
     

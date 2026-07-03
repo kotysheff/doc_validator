@@ -141,3 +141,45 @@ issues = [
     ValidationIssue(issue_type=IssueType.missing_file, message="Файл не был найден", file_name="missing.txt", severity=Severity.ERROR)
 ]
 ```
+
+## ValidationSettings
+
+### Назначение
+Модель настроек поведения поиска и обработки файлов в процессе проверки.
+
+### Поля
+- `recursive` — флаг рекурсивного обхода каталога поиска; `True`/`False`
+- `check_empty_files` — флаг проверки найденных файлов на пустоту; `True`/`False`
+- `detect_extra_files` — флаг обнаружения лишних файлов в каталоге; `True`/`False`
+
+### Пример
+```python
+settings = ValidationSettings(
+    recursive=True,
+    check_empty_files=True,
+    detect_extra_files=False,
+)
+```
+
+## Requirements
+
+### Назначение
+Модель описывает набор требований к проверке файлов, включая список ожидаемых файлов и связанные настройки проверки.
+
+### Поля
+- `required_files` — список объектов `ExpectedFile`, описывающих файлы, которые должны быть найдены
+- `settings` — объект `ValidationSettings`, определяющий режимы поиска и проверки
+
+### Пример
+```python
+requirements = Requirements(
+    required_files=[
+        ExpectedFile(name="report", allowed_extensions=[".pdf", ".docx"], required=True)
+    ],
+    settings=ValidationSettings(
+        recursive=True,
+        check_empty_files=True,
+        detect_extra_files=True,
+    )
+)
+```
