@@ -51,15 +51,6 @@ class InputRequirementFileError(DocValidatorError):
         message = f"Файл требований по пути '{path}' не может быть прочитан: {reason}"
         super().__init__(message)
 
-class PermissionError(DocValidatorError):
-    """Ошибка доступа к файлам или каталогам."""
-
-    def __init__(self, path: str, reason: str) -> None:
-        self.path = path
-        self.reason = reason
-        message = f"Нет доступа к '{path}': {reason}"
-        super().__init__(message)
-
 
 class ReportWriteError(DocValidatorError):
     """Ошибка при записи отчета."""
@@ -68,16 +59,6 @@ class ReportWriteError(DocValidatorError):
         self.path = path
         self.reason = reason
         message = f"Не удалось записать отчет в '{path}': {reason}"
-        super().__init__(message)
-
-
-class JsonReadError(DocValidatorError):
-    """Ошибка при чтении входящего JSON-файла."""
-
-    def __init__(self, path: str, reason: str) -> None:
-        self.path = path
-        self.reason = reason
-        message = f"Не удалось прочитать JSON-файл '{path}': {reason}"
         super().__init__(message)
 
 

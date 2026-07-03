@@ -390,6 +390,7 @@ class ValidationResult:
                     f"{expected_type.__name__}, получено {type(value).__name__}"
                 )
 
+
 @dataclass
 class ValidationSettings:
     """Модель настроек поиска файлов"""
@@ -420,6 +421,7 @@ class ValidationSettings:
             raise TypeError(
                 f"Поле 'detect_extra_files' должно быть типа 'bool', получено {type(self.detect_extra_files).__name__}"
             )
+
 
 @dataclass
 class Requirements:
