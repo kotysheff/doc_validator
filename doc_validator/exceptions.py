@@ -42,6 +42,15 @@ class UserInputParseError(DocValidatorError):
         super().__init__(message)
 
 
+class InputRequirementFileError(DocValidatorError):
+    """Ошибка переданного файла требований."""
+
+    def __init__(self, path: str, reason: str) -> None:
+        self.path = path
+        self.reason = reason
+        message = f"Файл требований по пути '{path}' не может быть прочитан: {reason}"
+        super().__init__(message)
+
 class PermissionError(DocValidatorError):
     """Ошибка доступа к файлам или каталогам."""
 
