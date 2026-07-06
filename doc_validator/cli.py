@@ -9,6 +9,7 @@ import argparse
 from pathlib import Path
 
 from doc_validator.models import ReportFormat
+from doc_validator.exceptions import UserInputParseError
 
 def create_parser() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -35,4 +36,25 @@ def create_parser() -> argparse.Namespace:
                                                              "- Печатать, сколько времени заняло сканирование"
                                                              "- Какие настройки загружены")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if not isinstance(args.target, Path) or not args.target.exists() or not args.target.is_dir():
+        raise UserInputParseError("target", args.target, "путь не существует или не является каталогом")
+
+    if args.requirements is not None:
+        if not isinstance(args.requirements, Path) or not args.requirements.exists() or not args.requirements.is_file():
+            raise UserInputParseError("--requirements", args.requirements, "файл требований не найден или не является файлом")
+
+    if args.output is not None:
+        parent = args.output.parent
+        if not parent.exists():
+            raise UserInputParseError("--output", args.output, "каталог для вывода не существует")
+        if not parent.is_dir():
+            raise UserInputParseError("--output", args.output, "родительский путь не является каталогом")
+
+    try:
+        args.format = ReportFormat(args.format)
+    except Exception as exc:
+        raise UserInputParseError("--format", args.format, f"недопустимый формат: {exc}")
+
+    return args
