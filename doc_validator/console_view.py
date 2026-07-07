@@ -1,7 +1,12 @@
 """Вывод результатов проверки в консоль.
 
-Модуль отвечает за отображение итогов проверки в терминале
-с использованием библиотеки Rich.
+Модуль отвечает за отображение результатов работы программы в консоли. Вывод
+форматируется с использованием сторонней библиотеки Rich.
+
+В зависимости от входных данных, результат работы программы может выводиться в двух форматах:
+    - стандартный: включает в себя вывод статуса, основной статистики и проблем
+    - расширенный: помимо стандартного вывода дополнительно включает в себя вывод информации о
+    найденных файлах, ненайденных файлах, файлах с неверным расширением, лишних файлах
 """
 
 from rich.console import Console
@@ -13,11 +18,24 @@ from doc_validator.models import ValidationResult
 
 
 def print_summary(result: ValidationResult, show_details: bool = False) -> None:
+    """Принимает результат выполнения проверки и формирует структурированный вывод в консоль.
+
+    Args:
+        result (ValidationResult): Итог проверки, содержащий списки найденных,
+            отсутствующих, пустых, лишних файлов и обнаруженных проблем.
+        show_details (bool): Флаг включения расширенного (детального) вывода.
+            По умолчанию False.
+
+    Raises:
+        TypeError: Если параметры result или show_details переданы с неверным типом данных.
+    """
+
+    # Валидация: входные параметры
     if not isinstance(result, ValidationResult):
-        logger.exception("Неправильный тип result: %s", type(result).__name__)
+        logger.error("Неправильный тип result: %s", type(result).__name__)
         raise TypeError(f"Поле result должно быть типа 'ValidationResult', получено: {type(result).__name__}")
     if not isinstance(show_details, bool):
-        logger.exception("Неправильный тип show_details: %s", type(show_details).__name__)
+        logger.error("Неправильный тип show_details: %s", type(show_details).__name__)
         raise TypeError(f"Поле show_details должно быть типа 'bool', получено: {type(show_details).__name__}")
 
     logger.info("Вывод сводки в консоль, детализация=%s", show_details)
@@ -25,6 +43,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
     console.print(Panel.fit("Отчет проверки каталога DocValidator", style="cyan"))
     console.print()
 
+    # Выбор цвета в зависимости от статуса завершения
     if result.status.value == "OK":
         status_color = "green"
     elif result.status.value == "WARNING":
@@ -35,11 +54,11 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
     console.print(f"Итоговый статус [{status_color}] {result.status.value} [/{status_color}]")
     console.print()
 
+    # Формирование таблицы базовой статистики
     console.print("Статистика: ", style="bold")
     stats_table = Table(show_header=False)
     stats_table.add_column("Категория", no_wrap=True)
     stats_table.add_column("Количество", no_wrap=True)
-
     stats_table.add_row("Найдено корректных файлов", str(len(result.found_files)))
     stats_table.add_row("Отсутствует файлов", str(len(result.missing_files)))
     stats_table.add_row("Неверное расширение", str(len(result.wrong_extension_files)))
@@ -51,7 +70,9 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
     logger.debug("Таблица статистики успешно построена")
     console.print()
 
+    # В случае включения режима расширенного вывода
     if show_details:
+        # Формирование таблицы найденных файлов
         if result.found_files:
             console.print("Найденные файлы: ", style="bold green")
             found_table = Table(show_header=True, border_style="green")
@@ -69,6 +90,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
             logger.debug("Таблица найденных файлов успешно построена")
             console.print()
 
+        # Формирование таблицы отсутствующих файлов
         if result.missing_files:
             console.print("Отсутствующие файлы: ", style="bold red")
             missing_table = Table(show_header=True, border_style="red")
@@ -87,6 +109,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
             logger.debug("Таблица отсутствующих файлов успешно построена")
             console.print()
 
+        # Формирование таблицы файлов с неверным расширением
         if result.wrong_extension_files:
             console.print("Файлы с неверным расширением: ", style="bold yellow")
             wrong_table = Table(show_header=True, border_style="yellow")
@@ -105,6 +128,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
             logger.debug("Таблица файлов с неверным расширением успешно построена")
             console.print()
 
+        # Формирование таблицы пустых файлов
         if result.empty_files:
             console.print("Пустые файлы: ", style="bold yellow")
             empty_table = Table(show_header=True, border_style="yellow")
@@ -123,6 +147,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
             logger.debug("Таблица пустых файлов успешно построена")
             console.print()
 
+        # Формирование таблицы лишних файлов
         if result.extra_files:
             console.print("Лишние файлы: ", style="bold yellow")
             extra_table = Table(show_header=True, border_style="yellow")
@@ -141,6 +166,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
             logger.debug("Таблица лишних файлов успешно построена")
             console.print()
 
+    # Формирование таблицы проблем при сканировании
     if result.issues:
         console.print("Проблемы: ", style="bold red")
         issues_table = Table(show_header=True, border_style="red")
