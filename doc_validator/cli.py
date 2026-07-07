@@ -33,7 +33,7 @@ def parse_arguments() -> argparse.Namespace:
             - debug (bool): Флаг режима разработчика
 
     :raises:
-        UserInputParseError: Если какой то из переданных путей некорректен, или
+        UserInputParseError: Если какой-то из переданных путей некорректен, или
         целевой формат не поддерживается.
     """
 
