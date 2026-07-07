@@ -8,6 +8,7 @@
 import argparse
 from pathlib import Path
 
+from doc_validator.config_logger import logger
 from doc_validator.models import ReportFormat
 from doc_validator.exceptions import UserInputParseError
 
@@ -37,19 +38,24 @@ def create_parser() -> argparse.Namespace:
                                                              "- Какие настройки загружены")
 
     args = parser.parse_args()
+    logger.info("Получен ввод от пользователя: %s", args)
 
     if not isinstance(args.target, Path) or not args.target.exists() or not args.target.is_dir():
+        logger.error("Неверный аргумент target: %s", args.target)
         raise UserInputParseError("target", args.target, "путь не существует или не является каталогом")
 
     if args.requirements is not None:
         if not isinstance(args.requirements, Path) or not args.requirements.exists() or not args.requirements.is_file():
+            logger.error("Неверный аргумент --requirements: %s", args.requirements)
             raise UserInputParseError("--requirements", args.requirements, "файл требований не найден или не является файлом")
 
     if args.output is not None:
         parent = args.output.parent
         if not parent.exists():
+            logger.error("Каталог для вывода не существует: %s", parent)
             raise UserInputParseError("--output", args.output, "каталог для вывода не существует")
         if not parent.is_dir():
+            logger.error("Родительский путь вывода не является каталогом: %s", parent)
             raise UserInputParseError("--output", args.output, "родительский путь не является каталогом")
 
     try:

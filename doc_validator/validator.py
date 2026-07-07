@@ -5,6 +5,7 @@
 Результат проверки далее используется для формирования итогового отчета.
 """
 
+from doc_validator.config_logger import logger
 from doc_validator.models import (
     ExpectedFile,
     IssueType,
@@ -17,6 +18,7 @@ from doc_validator.models import (
 
 
 def validate_files(expected_files: list[ExpectedFile], actual_files: list[ScannedFile], settings: ValidationSettings) -> ValidationResult:
+    logger.info("Запуск валидации: ожидаемых файлов=%d, фактически найденных=%d", len(expected_files), len(actual_files))
     """Сравнить ожидаемые файлы с фактически найденными файлами."""
     if not isinstance(expected_files, list):
         raise TypeError(f"expected_files должен быть типа 'list', получено: {type(expected_files).__name__}")
@@ -134,7 +136,7 @@ def validate_files(expected_files: list[ExpectedFile], actual_files: list[Scanne
                     )
                 )
 
-    return ValidationResult(
+    result = ValidationResult(
         found_files=found_files,
         missing_files=missing_files,
         wrong_extension_files=wrong_extension_files,
@@ -142,3 +144,13 @@ def validate_files(expected_files: list[ExpectedFile], actual_files: list[Scanne
         extra_files=extra_files,
         issues=issues,
     )
+    logger.info(
+        "Валидация завершена: найдено=%d, пропущено=%d, неверных расширений=%d, пустых=%d, лишних=%d, проблем=%d",
+        len(found_files),
+        len(missing_files),
+        len(wrong_extension_files),
+        len(empty_files),
+        len(extra_files),
+        len(issues),
+    )
+    return result

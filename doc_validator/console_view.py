@@ -8,15 +8,19 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
+from doc_validator.config_logger import logger
 from doc_validator.models import ValidationResult
 
 
 def print_summary(result: ValidationResult, show_details: bool = False) -> None:
     if not isinstance(result, ValidationResult):
+        logger.exception("Неправильный тип result: %s", type(result).__name__)
         raise TypeError(f"Поле result должно быть типа 'ValidationResult', получено: {type(result).__name__}")
     if not isinstance(show_details, bool):
+        logger.exception("Неправильный тип show_details: %s", type(show_details).__name__)
         raise TypeError(f"Поле show_details должно быть типа 'bool', получено: {type(show_details).__name__}")
 
+    logger.info("Вывод сводки в консоль, детализация=%s", show_details)
     console = Console()
     console.print(Panel.fit("Отчет проверки каталога DocValidator", style="cyan"))
     console.print()
@@ -44,6 +48,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
     stats_table.add_row("Всего проблем", str(len(result.issues)))
 
     console.print(stats_table)
+    logger.debug("Таблица статистики успешно построена")
     console.print()
 
     if show_details:
@@ -61,6 +66,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
                 size = str(file.size_bytes)
                 found_table.add_row(str(number), name, extension, size)
             console.print(found_table)
+            logger.debug("Таблица найденных файлов успешно построена")
             console.print()
 
         if result.missing_files:
@@ -78,6 +84,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
                 missing_table.add_row(str(idx), name, allowed, required)
 
             console.print(missing_table)
+            logger.debug("Таблица отсутствующих файлов успешно построена")
             console.print()
 
         if result.wrong_extension_files:
@@ -95,6 +102,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
                 wrong_table.add_row(str(idx), name, f"[red]{extension}[/red]", path)
 
             console.print(wrong_table)
+            logger.debug("Таблица файлов с неверным расширением успешно построена")
             console.print()
 
         if result.empty_files:
@@ -112,6 +120,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
                 empty_table.add_row(str(idx), name, extension, path)
 
             console.print(empty_table)
+            logger.debug("Таблица пустых файлов успешно построена")
             console.print()
 
         if result.extra_files:
@@ -129,6 +138,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
                 extra_table.add_row(str(idx), name, extension, str(size))
 
             console.print(extra_table)
+            logger.debug("Таблица лишних файлов успешно построена")
             console.print()
 
     if result.issues:
@@ -149,6 +159,7 @@ def print_summary(result: ValidationResult, show_details: bool = False) -> None:
             issues_table.add_row(str(idx), severity, issue_type, file_name, message)
 
         console.print(issues_table)
+        logger.debug("Таблица с проблемами успешно построена")
 
     else:
         console.print("Проблем не обнаружено!", style="bold green")

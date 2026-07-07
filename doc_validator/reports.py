@@ -9,11 +9,12 @@ import os
 from pathlib import Path
 from typing import Any
 
+from doc_validator.config_logger import logger
 from doc_validator.models import ValidationResult, ValidationSettings, ReportFormat
 from doc_validator.exceptions import ReportWriteError
 
 
-class ReportBuilder(object):
+class ReportBuilder:
     def __init__(self, result: ValidationResult, settings: ValidationSettings, output_path: Path, report_format: ReportFormat):
         self.result = result
         self.settings = settings
@@ -22,16 +23,19 @@ class ReportBuilder(object):
 
     def _validate_output_path(self) -> None:
         if self.output_path.exists() and self.output_path.is_dir():
+            logger.error("Путь для отчета указывает на директорию: %s", self.output_path)
             raise ReportWriteError(str(self.output_path), "указанный путь указывает на директорию")
 
         parent_dir = self.output_path.parent
         if not parent_dir.exists():
+            logger.error("Родительский каталог отчета не существует: %s", parent_dir)
             raise ReportWriteError(str(self.output_path), "родительский каталог для отчета не существует")
 
         if not parent_dir.is_dir():
             raise ReportWriteError(str(self.output_path), "родительский путь не является директорией")
 
         if not os.access(parent_dir, os.W_OK):
+            logger.error("Нет прав на запись в каталог отчета: %s", parent_dir)
             raise ReportWriteError(str(self.output_path), "нет прав на запись в каталог")
 
     def _build_txt_report(self) -> str:
