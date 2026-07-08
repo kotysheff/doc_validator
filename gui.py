@@ -1,3 +1,11 @@
+"""
+Модуль графического интерфейса приложения DocValidator.
+
+Предоставляет пользовательский интерфейс на базе tkinter для выбора каталога,
+ввода списка ожидаемых файлов, настройки параметров проверки и запуска
+процесса валидации с выводом результатов в консоль или файл.
+"""
+
 import sys
 import os
 import re
@@ -31,6 +39,16 @@ FG_CONSOLE = "#e9ecef"
 
 
 class TkinterLogHandler(logging.Handler):
+    """
+    Обработчик логирования для вывода сообщений в текстовую область tkinter.
+
+    Перенаправляет записи логгера в интерфейс приложения и обновляет виджет
+    асинхронно, чтобы не блокировать основной поток GUI.
+
+    Args:
+        text_widget: виджет tkinter.Text для отображения логов.
+    """
+
     def __init__(self, text_widget):
         super().__init__()
         self.text_widget = text_widget
@@ -46,6 +64,16 @@ class TkinterLogHandler(logging.Handler):
 
 
 class DocValidatorGUI:
+    """
+    Главный класс графического интерфейса приложения.
+
+    Создает и управляет элементами интерфейса, собирает пользовательские
+    настройки, запускает проверку и отображает ее результаты.
+
+    Args:
+        root: корневой виджет tkinter.
+    """
+
     def __init__(self, root):
         self.root = root
         self.root.title("DocValidator GUI")
@@ -64,9 +92,12 @@ class DocValidatorGUI:
         self.empty_files_var = tk.BooleanVar(value=False)
         self.debug_var = tk.BooleanVar(value=False)
 
+        # Инициализация: создание и размещение элементов пользовательского интерфейса
         self.create_widgets()
 
     def create_widgets(self):
+        """Создать и разместить все элементы интерфейса."""
+        # Разметка: блок выбора каталога для проверки
         target_frame = tk.LabelFrame(self.root, text=" Выбор проверяемого каталога ", bg=BG_CARD, fg=FG_TEXT,
                                      font=("Arial", 10, "bold"), bd=1, relief="solid")
         target_frame.pack(fill="x", padx=15, pady=10)
@@ -79,6 +110,7 @@ class DocValidatorGUI:
                                       command=self.browse_target)
         btn_browse_target.pack(side="right", padx=10, pady=10)
 
+        # Разметка: блок ввода списка ожидаемых файлов
         req_frame = tk.LabelFrame(self.root, text=" Список искомых файлов ", bg=BG_CARD, fg=FG_TEXT,
                                   font=("Arial", 10, "bold"), bd=1, relief="solid")
         req_frame.pack(fill="both", expand=False, padx=15, pady=5)
@@ -88,6 +120,7 @@ class DocValidatorGUI:
         self.files_text.pack(fill="both", expand=True, padx=10, pady=5)
         self.files_text.insert("1.0", "document.txt\nword.docx")
 
+        # Разметка: блок настроек проверки и вывода отчета
         settings_frame = tk.Frame(self.root, bg=BG_CARD, bd=1, relief="solid")
         settings_frame.pack(fill="x", padx=15, pady=10)
 
@@ -128,6 +161,7 @@ class DocValidatorGUI:
                                  pady=8, command=self.start_validation_thread)
         self.btn_run.pack(fill="x", padx=15, pady=5)
 
+        # Разметка: блок консоли для отображения хода проверки
         console_label_frame = tk.LabelFrame(self.root, text=" Консоль ", bg=BG_CARD, fg=FG_TEXT,
                                             font=("Arial", 10, "bold"), bd=1, relief="solid")
         console_label_frame.pack(fill="both", expand=True, padx=15, pady=10)
@@ -137,16 +171,19 @@ class DocValidatorGUI:
         self.console_area.pack(fill="both", expand=True, padx=5, pady=5)
 
     def toggle_output_fields(self):
+        """Включить или отключить поля выбора пути сохранения отчета."""
         state = "normal" if self.use_output_var.get() else "disabled"
         self.output_entry.config(state=state)
         self.btn_browse_out.config(state=state)
 
     def browse_target(self):
+        """Открыть диалог выбора каталога для проверки."""
         directory = filedialog.askdirectory()
         if directory:
             self.target_dir_var.set(directory)
 
     def browse_output(self):
+        """Открыть диалог выбора файла для сохранения отчета."""
         fmt = self.format_cb.get()
         file_path = filedialog.asksaveasfilename(
             defaultextension=f".{fmt}",
@@ -156,18 +193,29 @@ class DocValidatorGUI:
             self.output_file_var.set(file_path)
 
     def clear_console(self):
+        """Очистить область вывода консоли."""
         self.console_area.delete("1.0", tk.END)
 
     def write_console(self, message):
+        """Вывести сообщение в консоль интерфейса."""
         self.console_area.insert(tk.END, message + "\n")
         self.console_area.see(tk.END)
 
     def start_validation_thread(self):
+        """Запустить процесс проверки в отдельном потоке."""
         threading.Thread(target=self.run_validation_pipeline, daemon=True).start()
 
     def run_validation_pipeline(self):
+        """
+        Выполнить полный цикл проверки через графический интерфейс.
+
+        Считывает параметры из формы, запускает сканирование каталога,
+        выполняет валидацию файлов и выводит результат либо в файл,
+        либо в текстовую консоль интерфейса.
+        """
         self.clear_console()
 
+        # Проверка: пользователем указан путь к каталогу
         target_path_str = self.target_dir_var.get().strip()
         if not target_path_str:
             self.write_console("[ОШИБКА] Укажите путь к каталогу!")
@@ -178,14 +226,17 @@ class DocValidatorGUI:
             self.write_console(f"[ОШИБКА] Путь '{target_path_str}' не найден!")
             return
 
+        # Проверка: введён ли список ожидаемых файлов
         raw_files_text = self.files_text.get("1.0", tk.END).strip()
         if not raw_files_text:
             self.write_console("[ОШИБКА] Список файлов пуст!")
             return
 
+        # Разбор: строки со списком файлов на отдельные элементы
         file_items = re.split(r'[,\n]', raw_files_text)
         expected_files = []
 
+        # Сборка: объектов ExpectedFile из пользовательского ввода
         for item in file_items:
             item = item.strip()
             if not item:
@@ -205,6 +256,7 @@ class DocValidatorGUI:
                 self.write_console(f"[ОШИБКА] Ошибка: {e}")
                 return
 
+        # Формирование: настроек проверки из пользовательских флагов
         settings = ValidationSettings(
             recursive=self.recursive_var.get(),
             check_empty_files=self.empty_files_var.get(),
@@ -214,6 +266,8 @@ class DocValidatorGUI:
         log_handler = None
         start_time = None
 
+        # Подготовка: режима отладки и логирования
+        # Подключение: обработчика логов к текстовой области интерфейса
         if self.debug_var.get():
             start_time = time.monotonic()
             root_logger = logging.getLogger()
@@ -233,6 +287,7 @@ class DocValidatorGUI:
             logger.debug(
                 f"Конфигурация поиска: рекурсивно={settings.recursive}, пустые={settings.check_empty_files}, лишние={settings.detect_extra_files}")
 
+        # Выполнение: сканирования каталога и валидации файлов
         try:
             scanned_files = scan_directory(target_directory, settings.recursive)
 
@@ -245,6 +300,7 @@ class DocValidatorGUI:
                 logger.debug(
                     f"Результаты сопоставления: корректных={len(validation_result.found_files)}, отсутствующих={len(validation_result.missing_files)}, пустых={len(validation_result.empty_files)}, лишних={len(validation_result.extra_files)}")
 
+            # Вывод: результата либо в файл, либо в консоль интерфейса
             output_path_str = self.output_file_var.get().strip() if self.use_output_var.get() else None
 
             if output_path_str:
@@ -265,6 +321,7 @@ class DocValidatorGUI:
         except Exception as exc:
             self.write_console(f"\n[КРИТИЧЕСКАЯ ОШИБКА]: {exc}")
         finally:
+            # Очистка: обработчика логов после завершения проверки
             if log_handler:
                 logging.getLogger().removeHandler(log_handler)
 
