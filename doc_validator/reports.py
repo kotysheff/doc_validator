@@ -1,6 +1,8 @@
-"""Формирование и запись отчетов.
+"""
+Модуль формирования и записи отчетов.
 
-Данный модуль отвечает за создание отчетов и их вывод в указанный файл.
+Данный модуль отвечает за создание отчетов на основе результатов проверки,
+их сериализацию в текстовый, JSON или CSV формат и сохранение в указанный файл.
 """
 
 import csv
@@ -15,12 +17,27 @@ from doc_validator.exceptions import ReportWriteError
 
 
 class ReportBuilder:
-    def __init__(self, result: ValidationResult, settings: ValidationSettings, output_path: Path, report_format: ReportFormat):
+    """
+    Класс для формирования и сохранения отчетов по результатам проверки.
+
+    Выполняет сбор данных из объекта ValidationResult, преобразует их в нужный
+    формат и записывает итоговый отчет в файл.
+
+    Args:
+        result: объект с результатами проверки каталога.
+        settings: настройки, определяющие какие данные включать в отчет.
+        output_path: путь к файлу, куда будет сохранен отчет.
+        report_format: формат выходного отчета.
+    """
+
+    def __init__(self, result: ValidationResult, settings: ValidationSettings, output_path: Path,
+                 report_format: ReportFormat):
         self.result = result
         self.settings = settings
         self.output_path = Path(output_path)
         self.report_format = report_format
 
+    # Валидация: целевой путь записи отчета
     def _validate_output_path(self) -> None:
         if self.output_path.exists() and self.output_path.is_dir():
             logger.error("Путь для отчета указывает на директорию: %s", self.output_path)
@@ -38,6 +55,7 @@ class ReportBuilder:
             logger.error("Нет прав на запись в каталог отчета: %s", parent_dir)
             raise ReportWriteError(str(self.output_path), "нет прав на запись в каталог")
 
+    # Непубличная функция: формирование текста TXT отчета
     def _build_txt_report(self) -> str:
         txt_report = "Отчет проверки каталога DocValidator\n\n"
         txt_report += f"Итоговый статус {self.result.status}\n\n"
@@ -103,6 +121,7 @@ class ReportBuilder:
                 txt_report += f"{number}. [{issue.issue_type}] {issue.file_name} - {issue.message}\n"
         return txt_report
 
+    # Непубличная функция: сохранение текстового отчета
     def _save_txt_report(self, report: str) -> None:
         try:
             with open(self.output_path, "w", encoding="utf-8") as f:
@@ -110,6 +129,7 @@ class ReportBuilder:
         except OSError as exc:
             raise ReportWriteError(str(self.output_path), f"ошибка записи файла: {exc}") from exc
 
+    # Сериализация: перевод данных о найденных файлах в JSON-читаемый формат
     def _serialize_found_files(self) -> list[dict[str, Any]]:
         found_files = []
         for file in self.result.found_files:
@@ -122,6 +142,7 @@ class ReportBuilder:
             found_files.append(file_dict)
         return found_files
 
+    # Сериализация: перевод данных о потерянных файлах в JSON-читаемый формат
     def _serialize_missing_files(self) -> list[dict[str, Any]]:
         missing_files = []
         for file in self.result.missing_files:
@@ -133,6 +154,7 @@ class ReportBuilder:
             missing_files.append(file_dict)
         return missing_files
 
+    # Сериализация: перевод данных о файлах с неверным расширением в JSON-читаемый формат
     def _serialize_wrong_extension_files(self) -> list[dict[str, Any]]:
         wrong_extension_files = []
         for file in self.result.wrong_extension_files:
@@ -145,6 +167,7 @@ class ReportBuilder:
             wrong_extension_files.append(file_dict)
         return wrong_extension_files
 
+    # Сериализация: перевод данных о пустых файлах в JSON-читаемый формат
     def _serialize_empty_files(self) -> list[dict[str, Any]]:
         empty_files = []
         for file in self.result.empty_files:
@@ -157,6 +180,7 @@ class ReportBuilder:
             empty_files.append(file_dict)
         return empty_files
 
+    # Сериализация: перевод данных о лишних файлах в JSON-читаемый формат
     def _serialize_extra_files(self) -> list[dict[str, Any]]:
         extra_files = []
         for file in self.result.extra_files:
@@ -169,6 +193,7 @@ class ReportBuilder:
             extra_files.append(file_dict)
         return extra_files
 
+    # Сериализация: перевод данных о проблемах в JSON-читаемый формат
     def _serialize_issues(self) -> list[dict[str, Any]]:
         issues = []
         for issue in self.result.issues:
@@ -181,6 +206,7 @@ class ReportBuilder:
             issues.append(issue_dict)
         return issues
 
+    # Непубличная функция: формирование JSON структуры отчета
     def _build_json_report(self) -> dict[str, Any]:
         json_report = {
             "status": self.result.status.value,
@@ -201,6 +227,7 @@ class ReportBuilder:
         }
         return json_report
 
+    # Непубличная функция: запись JSON отчета в файл
     def _save_json_report(self, report: dict[str, Any]) -> None:
         try:
             with open(self.output_path, "w", encoding="utf-8") as f:
@@ -208,6 +235,7 @@ class ReportBuilder:
         except OSError as exc:
             raise ReportWriteError(str(self.output_path), f"ошибка записи файла: {exc}") from exc
 
+    # Непубличная функция: формирование CSV структуры отчета
     def _build_csv_report(self) -> list[dict[str, Any]]:
         issues_data = []
 
@@ -232,6 +260,7 @@ class ReportBuilder:
                 )
         return issues_data
 
+    # Непубличная функция: запись CSV отчета
     def _save_csv_report(self, report: list[dict[str, Any]]) -> None:
         fieldnames = ["type", "severity", "file_name", "message"]
 
@@ -244,6 +273,12 @@ class ReportBuilder:
             raise ReportWriteError(str(self.output_path), f"ошибка записи файла: {exc}") from exc
 
     def save_report(self) -> None:
+        """
+        Сформировать и сохранить отчет в выбранном формате.
+
+        Выполняет проверку параметров сохранения, выбирает нужный способ
+        подготовки отчета и записывает его в файл.
+        """
         supported_formats = {member for member in ReportFormat}
         if self.report_format not in supported_formats:
             raise ReportWriteError(str(self.output_path), "передан неподдерживаемый формат отчета")
