@@ -1,4 +1,5 @@
-"""Проверка и валидация результатов поиска.
+"""
+Модуль проверки и валидации результатов поиска.
 
 Этот модуль является ключевым звеном приложения: он сравнивает список
 ожидаемых файлов с фактически обнаруженными в указанном каталоге.
@@ -17,9 +18,30 @@ from doc_validator.models import (
 )
 
 
-def validate_files(expected_files: list[ExpectedFile], actual_files: list[ScannedFile], settings: ValidationSettings) -> ValidationResult:
-    logger.info("Запуск валидации: ожидаемых файлов=%d, фактически найденных=%d", len(expected_files), len(actual_files))
-    """Сравнить ожидаемые файлы с фактически найденными файлами."""
+def validate_files(expected_files: list[ExpectedFile], actual_files: list[ScannedFile],
+                   settings: ValidationSettings) -> ValidationResult:
+    """
+    Функция предназначена для сравнения ожидаемых файлов с фактически найденными файлами.
+
+    Выполняет проверку соответствия списка ожидаемых документов фактически
+    обнаруженным файлам с учетом допустимых расширений, пустых файлов,
+    лишних элементов и прочих условий из настроек.
+
+    Args:
+        expected_files: список файлов, которые должны быть обнаружены.
+        actual_files: список файлов, найденных в каталоге.
+        settings: настройки проверки, определяющие правила валидации.
+
+    Returns:
+        Объект ValidationResult с итогами проверки и возникающими проблемами.
+
+    Raises:
+        TypeError: если переданные аргументы имеют неверный тип.
+    """
+    logger.info("Запуск валидации: ожидаемых файлов=%d, фактически найденных=%d", len(expected_files),
+                len(actual_files))
+
+    # Валидация: проверка типов входных аргументов
     if not isinstance(expected_files, list):
         raise TypeError(f"expected_files должен быть типа 'list', получено: {type(expected_files).__name__}")
 
@@ -35,6 +57,7 @@ def validate_files(expected_files: list[ExpectedFile], actual_files: list[Scanne
     if any(not isinstance(expected_file, ExpectedFile) for expected_file in expected_files):
         raise TypeError("Список expected_files должен содержать только объекты типа 'ExpectedFile'")
 
+    # Формирование структур данных для распределения результатов
     found_files: list[ScannedFile] = []
     missing_files: list[ExpectedFile] = []
     wrong_extension_files: list[ScannedFile] = []
