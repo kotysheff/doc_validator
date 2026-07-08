@@ -1,11 +1,12 @@
-"""Модуль является точкой входа CLI-приложения doc-validator
+"""
+Модуль точки входа CLI-приложения DocValidator.
 
-Модуль отвечает за запуск пайплайна обработки данных,
-связывание всех модулей между собой, обработку ошибок верхнего
-уровня, выбор режима вывода (консоль/файл). Модуль не содержит бизнес-логики
+В случае запуска из-под CLI-интерфейса Модуль отвечает за запуск основного
+пайплайна обработки данных, связывание всех модулей между собой,
+обработку ошибок верхнего уровня и выбор режима вывода результатов в консоль или в файл.
 """
 
-from doc_validator.cli import create_parser
+from doc_validator.cli import parse_arguments
 from doc_validator.console_view import print_summary
 from doc_validator.config_logger import logger
 from doc_validator.models import ReportFormat
@@ -21,9 +22,22 @@ import time
 from pathlib import Path
 
 def main() -> int:
-    try:
-        cli_arguments = create_parser()
+    """
+    Запустить основной цикл работы CLI-приложения.
 
+    Выполняет запуск функций разбора аргументов командной строки, загрузки требований,
+    сканирования каталога, валидации файлов и формирования отчета или
+    вывода результата в консоль.
+
+    Returns:
+        Код завершения приложения: 0 при успешном завершении и ненулевой код при ошибке.
+    """
+
+    # Попытка парсинга аргументов командной строки
+    try:
+        cli_arguments = parse_arguments()
+
+        # Создание объектов на основе аргументов командной строки
         target_directory = cli_arguments.target
         requirements_file = cli_arguments.requirements
         output_path = cli_arguments.output
@@ -32,8 +46,9 @@ def main() -> int:
         debug_flag = cli_arguments.debug
         start_time = None
 
+        # Проверка включенного флага debug-мода
         if debug_flag:
-            start_time = time.monotonic()
+            start_time = time.monotonic() # Засекаем время старта выполнения программы
 
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(logging.DEBUG)
@@ -58,6 +73,7 @@ def main() -> int:
             logger.debug("full: %s", full_flag)
             logger.debug("debug: %s", debug_flag)
 
+        # Попытка загрузить файл требований, парсинг на объекты требуемых файлов и настроек
         try:
             logger.info("Загружаю требования из файла: %s", requirements_file)
 
@@ -84,6 +100,8 @@ def main() -> int:
             logger.exception("Ошибка загрузки требований: %s", exception)
             return 2
 
+        # Попытка запуска механизма сканирования каталога(ов), создания объекта
+        # отсканированных файлов
         try:
             logger.info("Сканирую каталог: %s", target_directory)
             if debug_flag:
@@ -97,6 +115,7 @@ def main() -> int:
             logger.exception("Ошибка при сканировании каталога: %s", exception)
             return 3
 
+        # Запуск функционала валидации файлов, формирования объекта результата валидации
         validation_result = validate_files(expected_files, scanned_files, settings)
 
         if debug_flag:
@@ -109,6 +128,7 @@ def main() -> int:
                          len(validation_result.issues),
             )
 
+        # Попытка формирования отчета и его дальнейшего вывода в консоль или файл
         try:
             if output_path:
                 logger.info("Формирую отчет: %s формат=%s", output_path, format)
@@ -126,6 +146,7 @@ def main() -> int:
             duration = time.monotonic() - start_time
             logger.debug("Общее время выполнения: %.3f секунд", duration)
 
+    # Перехват исключений всех типов
     except Exception as exception:
         logger.exception("Неожиданная ошибка в ходе выполнения: %s", exception)
         return 1
