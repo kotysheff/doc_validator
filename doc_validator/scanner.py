@@ -1,7 +1,8 @@
-"""Сканирование каталога.
+"""
+Модуль сканирования каталога.
 
-Модуль отвечает за обход указанного каталога и преобразование найденных
-файлов во внутренние объекты ScannedFile.
+Модуль отвечает за обход указанного каталога, выявление файлов и
+преобразование найденных результатов во внутренние объекты ScannedFile.
 """
 
 import os
@@ -13,25 +14,47 @@ from doc_validator.models import ScannedFile
 
 
 def scan_directory(target_dir: str | Path, recursive: bool = False) -> list[ScannedFile]:
+    """
+    Функция предназначена для сканирования каталога и возврата списка найденных файлов.
+
+    Обходит указанный каталог, собирает информацию о найденных файлах и
+    преобразует их в объекты ScannedFile для дальнейшей обработки.
+
+    Args:
+        target_dir: путь к каталогу, который необходимо просканировать.
+        recursive: флаг рекурсивного обхода подкаталогов.
+
+    Returns:
+        Список объектов ScannedFile, описывающих найденные файлы.
+
+    Raises:
+        ScanError: если целевой каталог не существует, не является директорией
+            или недоступен для чтения.
+    """
     logger.info("Запущено сканирование каталога %s рекурсивно=%s", target_dir, recursive)
     target_dir = Path(target_dir)
 
+    # Валидация: пути к целевому каталогу существует
     if not target_dir.exists():
-        logger.exception("Целевая директория не существует: %s", target_dir)
+        logger.error("Целевая директория не существует: %s", target_dir)
         raise ScanError(str(target_dir),
                         "Указанная директория не существует")
+
+    # Валидация: целевой каталог является директорией
     if not target_dir.is_dir():
-        logger.exception("Целевой путь не является директорией: %s", target_dir)
+        logger.error("Целевой путь не является директорией: %s", target_dir)
         raise ScanError(str(target_dir),
                         "Указанный путь не является директорией")
+
+    # Валидация: у целевого каталога есть права на чтение
     if not os.access(target_dir, os.R_OK):
-        logger.exception("Нет прав на чтение директории: %s", target_dir)
+        logger.error("Нет прав на чтение директории: %s", target_dir)
         raise ScanError(str(target_dir),
                         "Нет прав на чтение директории")
 
+    # Выбор режима обхода каталога и формирование списка объектов отсканированных файлов
     base_path = target_dir.resolve()
     paths = base_path.rglob("*") if recursive else base_path.iterdir()
-
     scanned_files: list[ScannedFile] = []
     for file_path in paths:
         if not file_path.is_file():
