@@ -10,6 +10,9 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 
 from doc_validator.config_logger import logger
 from doc_validator.models import ValidationResult, ValidationSettings, ReportFormat
@@ -272,6 +275,34 @@ class ReportBuilder:
         except OSError as exc:
             raise ReportWriteError(str(self.output_path), f"ошибка записи файла: {exc}") from exc
 
+    # Непубличная функция: запись PDF отчета
+    def _save_pdf_report(self, report_text: str) -> None:
+        try:
+            font_path = Path("/System/Library/Fonts/Supplemental/Courier New.ttf")
+            if not font_path.exists():
+                raise FileNotFoundError("Системный шрифт Courier New не найден")
+
+            pdfmetrics.registerFont(TTFont("CourierMono", font_path))
+            pdf = canvas.Canvas(str(self.output_path))
+            pdf.setTitle("Отчет DocValidator")
+            x_margin = 50
+            y_position = 800
+            line_height = 14
+            pdf.setFont("CourierMono", 10)
+
+            for line in report_text.splitlines():
+                if y_position < 50:
+                    pdf.showPage()
+                    pdf.setFont("CourierMono", 10)
+                    y_position = 800
+                pdf.drawString(x_margin, y_position, line)
+                y_position -= line_height
+            pdf.save()
+
+        except Exception as exc:
+            logger.error("Не удалось записать PDF-отчет: %s", exc)
+            raise ReportWriteError(str(self.output_path), f"ошибка записи PDF-файла: {exc}") from exc
+
     def save_report(self) -> None:
         """
         Сформировать и сохранить отчет в выбранном формате.
@@ -294,5 +325,8 @@ class ReportBuilder:
         elif self.report_format == ReportFormat.CSV:
             report = self._build_csv_report()
             self._save_csv_report(report)
+        elif self.report_format == ReportFormat.PDF:
+            report = self._build_txt_report()
+            self._save_pdf_report(report)
         else:
             raise ReportWriteError(str(self.output_path), "передан неподдерживаемый формат отчета")

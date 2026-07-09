@@ -110,6 +110,7 @@ class ReportFormat(Enum):
     TXT = "txt"
     JSON = "json"
     CSV = "csv"
+    PDF = "pdf"
 
     def __str__(self):
         return self.value
