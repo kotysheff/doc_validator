@@ -62,6 +62,7 @@ ExpectedFile(name="report", allowed_extensions=[".pdf", ".docx"], required=True)
 - `TXT`
 - `JSON`
 - `CSV`
+- `PDF`
 
 ## ValidationStatus
 
